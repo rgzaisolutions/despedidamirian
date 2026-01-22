@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { createGroup, joinGroup } from '../controllers/groupController';
+import { joinGroup, createGroup } from '../controllers/groupController.js';
 
 const router = Router();
 
-router.post('/create', createGroup);
 router.post('/join', joinGroup);
+router.post('/create', createGroup);
 
 export default router;

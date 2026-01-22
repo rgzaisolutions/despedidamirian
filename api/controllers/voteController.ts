@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db.js';
 
 export const getVotes = async (req: Request, res: Response) => {
     const group = (req as any).group;
@@ -19,8 +19,8 @@ export const castVote = async (req: Request, res: Response) => {
     const { device_uuid, display_name, item_type, item_id } = req.body;
 
     try {
-        // 1. Ensure device exists or create it
-        const [deviceRows]: any = await pool.execute(
+        // Find or create device
+        let [deviceRows]: any = await pool.execute(
             'SELECT id FROM devices WHERE group_id = ? AND device_uuid = ?',
             [group.id, device_uuid]
         );
@@ -34,11 +34,9 @@ export const castVote = async (req: Request, res: Response) => {
             deviceId = newDevice.insertId;
         } else {
             deviceId = deviceRows[0].id;
-            // Update display name if changed
-            await pool.execute('UPDATE devices SET display_name = ? WHERE id = ?', [display_name, deviceId]);
         }
 
-        // 2. Cast or Toggle Vote
+        // Toggle vote
         const [existingVote]: any = await pool.execute(
             'SELECT id FROM votes WHERE group_id = ? AND device_id = ? AND item_type = ? AND item_id = ?',
             [group.id, deviceId, item_type, item_id]
@@ -46,16 +44,16 @@ export const castVote = async (req: Request, res: Response) => {
 
         if (existingVote.length > 0) {
             await pool.execute('DELETE FROM votes WHERE id = ?', [existingVote[0].id]);
-            return res.json({ message: 'Voto retirado', action: 'removed' });
+            res.json({ message: 'Voto retirado' });
         } else {
             await pool.execute(
                 'INSERT INTO votes (group_id, device_id, item_type, item_id) VALUES (?, ?, ?, ?)',
                 [group.id, deviceId, item_type, item_id]
             );
-            return res.json({ message: 'Voto registrado', action: 'added' });
+            res.json({ message: 'Voto registrado' });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error al procesar el voto' });
+        res.status(500).json({ error: 'Error al procesar voto' });
     }
 };

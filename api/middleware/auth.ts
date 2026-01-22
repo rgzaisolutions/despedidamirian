@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { pool } from '../config/db';
+import { pool } from '../config/db.js';
 
 export const validateGroup = async (req: Request, res: Response, next: NextFunction) => {
     const groupId = req.headers['x-group-id'];
     const groupPin = req.headers['x-group-pin'];
 
-    if (!groupId || !groupPin) {
-        return res.status(401).json({ error: 'Se requiere ID de grupo y PIN' });
+    if (!groupId) {
+        return res.status(401).json({ error: 'Falta ID de grupo' });
     }
 
     try {
@@ -16,12 +16,12 @@ export const validateGroup = async (req: Request, res: Response, next: NextFunct
         );
 
         if (rows.length === 0) {
-            return res.status(403).json({ error: 'Credenciales de grupo inválidas' });
+            return res.status(403).json({ error: 'Grupo o PIN inválido' });
         }
 
         (req as any).group = rows[0];
         next();
     } catch (error) {
-        res.status(500).json({ error: 'Error de base de datos' });
+        res.status(500).json({ error: 'Error de autenticación' });
     }
 };
